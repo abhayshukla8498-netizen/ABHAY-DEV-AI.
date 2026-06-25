@@ -29,15 +29,18 @@ jobs:
           echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
           echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" > .env
 
-      - name: Grant Execute Permission
-        run: chmod +x gradlew
+      # Agar gradle-wrapper.jar missing hai, to yeh step naya generator chalu karega
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
 
-      - name: Build APK
-        run: ./gradlew assembleDebug
+      # Bina wrapper jar ke direct command se build karega
+      - name: Build APK with Gradle
+        run: gradle assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
-          
+          path: |
+            **/build/outputs/apk/debug/*.apk
+            
