@@ -1,4 +1,4 @@
-name: Android CI
+ name: Android CI
 
 on:
   push:
@@ -18,33 +18,49 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Unzip Source Code
+      # ZIP file ko proper folder architecture me extract karne ke liye
+      - name: Extract Project Safely
         run: |
-          unzip promptforge-ai.zip -d extracted_project
-          mv extracted_project/*/* . || true
-          mv extracted_project/* . || true
+          mkdir project_root
+          unzip promptforge-ai.zip -d project_root
+          # Agar zip ke andar extra subfolder hai, to check karein
+          if [ -d "project_root/app" ]; then
+            echo "Directly extracted to project_root"
+          else
+            # Subfolder se files ko bahar nikalne ke liye
+            mv project_root/*/* project_root/ 2>/dev/null || true
+          fi
 
-      - name: Inject API Key
+      - name: Inject API Key & Properties
         run: |
-          echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
-          echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" > .env
-
-      # Yeh step aapki missing gradle wrapper files (gradlew) ko sahi version ke sath generate kar dega
-      - name: Generate Gradle Wrapper
-        run: gradle wrapper --gradle-version 9.3.1
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > project_root/local.properties
+          echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" > project_root/.env
 
       - name: Grant Execute Permission
-        run: chmod +x gradlew
+        run: |
+          if [ -f "project_root/gradlew" ]; then
+            chmod +x project_root/gradlew
+          fi
 
-      # Ab yeh aapke project ke sahi wrapper se build karega, jisse libs error nahi aayega
-      - name: Build APK with Gradle
-        run: ./gradlew assembleDebug
+      # Is baar hum usi folder ke andar 'working-directory' set karke build chala rahe hain
+      - name: Build APK inside Project Folder
+        working-directory: ./project_root
+        run: |
+          if [ -f "./gradlew" ]; then
+            ./gradlew assembleDebug
+          else
+            gradle wrapper --gradle-version 9.3.1
+            chmod +x gradlew
+            ./gradlew assembleDebug
+          fi
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: debug-apk
           path: |
+            project_root/app/build/outputs/apk/debug/*.apk
             **/build/outputs/apk/debug/*.apk
+            
             
             
