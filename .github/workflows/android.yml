@@ -29,13 +29,16 @@ jobs:
           echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
           echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" > .env
 
-      # Agar gradle-wrapper.jar missing hai, to yeh step naya generator chalu karega
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+      # Yeh step aapki missing gradle wrapper files (gradlew) ko sahi version ke sath generate kar dega
+      - name: Generate Gradle Wrapper
+        run: gradle wrapper --gradle-version 9.3.1
 
-      # Bina wrapper jar ke direct command se build karega
+      - name: Grant Execute Permission
+        run: chmod +x gradlew
+
+      # Ab yeh aapke project ke sahi wrapper se build karega, jisse libs error nahi aayega
       - name: Build APK with Gradle
-        run: gradle assembleDebug
+        run: ./gradlew assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
@@ -43,4 +46,5 @@ jobs:
           name: debug-apk
           path: |
             **/build/outputs/apk/debug/*.apk
+            
             
