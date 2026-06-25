@@ -28,12 +28,17 @@ jobs:
             cp -r target_folder/* . 2>/dev/null || true
           fi
 
-      # Is step me hum missing .env.example file ko manually create kar rahe hain
       - name: Inject API Key & Missing Environment Files
         run: |
           echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
           echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" > .env
           echo "GEMINI_API_KEY=MY_GEMINI_API_KEY" > .env.example
+
+      # Yeh step aapke 'debug.keystore not found' wale error ko jad se khatam kar dega
+      - name: Generate Default Debug Keystore
+        run: |
+          mkdir -p ~/.android
+          keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
 
       - name: Force Clean Gradle Setup
         run: |
