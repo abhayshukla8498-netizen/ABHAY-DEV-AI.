@@ -18,12 +18,9 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # ZIP file ko extract karke check karne ke liye ki files kahan hain
       - name: Extract Code Super Safely
         run: |
           unzip promptforge-ai.zip -d target_folder
-          
-          # Agar zip ke andar folder structure badla hai, to use root par lekar aao
           if [ -d "target_folder/app" ]; then
             cp -r target_folder/* .
           else
@@ -31,12 +28,13 @@ jobs:
             cp -r target_folder/* . 2>/dev/null || true
           fi
 
-      - name: Inject API Key & Local Config
+      # Is step me hum missing .env.example file ko manually create kar rahe hain
+      - name: Inject API Key & Missing Environment Files
         run: |
           echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
           echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" > .env
+          echo "GEMINI_API_KEY=MY_GEMINI_API_KEY" > .env.example
 
-      # Purane saare local gradle file ke errors ko bypass karne ke liye naya wrapper refresh
       - name: Force Clean Gradle Setup
         run: |
           gradle wrapper --gradle-version 9.3.1
